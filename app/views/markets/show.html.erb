@@ -1,0 +1,188 @@
+<div style="margin-bottom: 1rem;">
+  <%= link_to "&larr; All Markets".html_safe, markets_path, style: "color: var(--text-muted); text-decoration: none; font-size: 0.85rem;" %>
+</div>
+
+<div class="layout-split">
+  <%# Left: Market Info %>
+  <div>
+    <div class="card" style="margin-bottom: 1rem;">
+      <div class="card-header">
+        <span class="badge badge-<%= @market.status %><%= @market.status == 'resolved' && @market.resolved_option ? '' : '' %>">
+          <%= @market.status.upcase %>
+        </span>
+        <% if @market.pool %>
+          <%= link_to @market.pool.name, pool_path(@market.pool), class: "badge badge-#{@market.pool.pool_type}" %>
+        <% end %>
+      </div>
+
+      <h1 style="font-size: 1.4rem; font-weight: 800; margin-bottom: 0.5rem;"><%= @market.title %></h1>
+
+      <% if @market.subject_name.present? %>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.5rem;">
+          About: <strong style="color: var(--text-primary);"><%= @market.subject_name %></strong>
+        </p>
+      <% end %>
+
+      <% if @market.description.present? %>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;"><%= @market.description %></p>
+      <% end %>
+
+      <div style="display: flex; gap: 1.5rem; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+        <span>Creator: <strong style="color: var(--text-primary);"><%= @market.creator.display_name %></strong></span>
+        <span>Ends: <strong style="color: var(--text-primary);"><%= @market.end_time.strftime("%b %d, %Y %I:%M %p") %></strong></span>
+        <span>House Cut: <strong style="color: var(--accent-yellow);"><%= @market.house_cut_pct %>%</strong></span>
+      </div>
+
+      <% if @market.status == 'resolved' && @market.resolved_option %>
+        <div style="background: rgba(0,212,170,0.1); border: 1px solid var(--accent-green); border-radius: 8px; padding: 0.75rem; margin-bottom: 1rem;">
+          Outcome: <strong style="color: var(--accent-green);">
+            <%= @market.resolved_option.label %>
+          </strong> won!
+        </div>
+      <% end %>
+
+      <%# Odds visualization %>
+      <div style="margin-bottom: 1rem;">
+        <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+          Current Odds &bull; Total Pool: <span style="color: var(--accent-yellow);">$<%= '%.2f' % @market.total_pool %></span>
+        </div>
+        <% @market.market_options.each_with_index do |opt, i| %>
+          <div style="margin-bottom: 0.5rem;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.2rem;">
+              <span><%= opt.label %> <% if @market.resolved_option_id == opt.id %><span style="color: var(--accent-green);">&#10003; Winner</span><% end %></span>
+              <span style="font-weight: 700; color: <%= i == 0 ? 'var(--accent-green)' : 'var(--accent-red)' %>;">
+                <%= @market.odds_for(opt) %>% &bull; <%= @market.american_odds(opt) %>
+              </span>
+            </div>
+            <div style="background: var(--border); border-radius: 4px; height: 8px; overflow: hidden;">
+              <div style="background: <%= i == 0 ? 'var(--accent-green)' : 'var(--accent-red)' %>; height: 100%; width: <%= @market.odds_for(opt) %>%; transition: width 0.5s;"></div>
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">
+              $<%= '%.2f' % opt.total_amount %> wagered &bull; <%= @market.payout_multiplier(opt) %>x payout
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%# Recent Bets Feed %>
+    <div class="card">
+      <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 1rem;">Proof Stream &amp; Recent Bets</h3>
+      <% if @bets.empty? %>
+        <p style="color: var(--text-muted); font-size: 0.85rem;">No bets yet. Be the first!</p>
+      <% else %>
+        <% @bets.each do |bet| %>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.65rem 0; border-bottom: 1px solid var(--border);">
+            <div>
+              <span style="font-weight: 600;"><%= bet.display_user %></span>
+              <span style="color: var(--text-muted); font-size: 0.85rem;"> bet on </span>
+              <span style="font-weight: 600; color: var(--accent-green);"><%= bet.market_option.label %></span>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-weight: 700; color: var(--accent-yellow);">$<%= '%.2f' % bet.amount %></div>
+              <% if bet.settled? %>
+                <div style="font-size: 0.75rem; color: <%= bet.payout_amount.to_f > 0 ? 'var(--accent-green)' : 'var(--accent-red)' %>;">
+                  <%= bet.payout_amount.to_f > 0 ? "+$#{'%.2f' % bet.payout_amount}" : "Lost" %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
+  <%# Right: Actions Sidebar %>
+  <div>
+    <% if logged_in? %>
+      <% if @market.status == 'open' && !@user_bet %>
+        <div class="bet-form">
+          <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 1rem;">Place Your Bet</h3>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">
+            Balance: <strong style="color: var(--accent-green);">$<%= '%.2f' % current_user.balance %></strong>
+          </p>
+
+          <%= form_with url: market_bets_path(@market), method: :post do |f| %>
+            <div class="form-group">
+              <label class="form-label">Pick an Outcome</label>
+              <% @market.market_options.each_with_index do |opt, i| %>
+                <label style="display: block; margin-bottom: 0.5rem; cursor: pointer;">
+                  <input type="radio" name="bet[market_option_id]" value="<%= opt.id %>" style="margin-right: 0.5rem;" required>
+                  <strong><%= opt.label %></strong>
+                  <span style="color: var(--text-muted); font-size: 0.8rem;">(<%= @market.odds_for(opt) %>% &bull; <%= @market.payout_multiplier(opt) %>x)</span>
+                </label>
+              <% end %>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Bet Amount ($)</label>
+              <%= f.number_field :amount, class: "form-control", min: 1, max: current_user.balance, step: 0.01, placeholder: "Enter amount" %>
+            </div>
+
+            <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
+              <%= f.check_box :anonymous, checked: current_user.anonymous_default? %>
+              <label style="font-size: 0.85rem; color: var(--text-muted);">Bet anonymously</label>
+            </div>
+
+            <%= f.submit "Place Bet", class: "btn btn-primary", style: "width: 100%;" %>
+          <% end %>
+        </div>
+
+      <% elsif @user_bet %>
+        <div class="bet-form">
+          <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem;">Your Bet</h3>
+          <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.5rem;">
+            You bet <strong style="color: var(--accent-yellow);">$<%= '%.2f' % @user_bet.amount %></strong> on
+            <strong style="color: var(--accent-green);"><%= @user_bet.market_option.label %></strong>
+          </p>
+          <% if @user_bet.settled? %>
+            <p style="color: <%= @user_bet.payout_amount.to_f > 0 ? 'var(--accent-green)' : 'var(--accent-red)' %>; font-weight: 700;">
+              <%= @user_bet.payout_amount.to_f > 0 ? "Won $#{'%.2f' % @user_bet.payout_amount}!" : "Lost this one." %>
+            </p>
+          <% else %>
+            <p style="color: var(--text-muted); font-size: 0.8rem;">Waiting for settlement...</p>
+          <% end %>
+        </div>
+
+      <% elsif @market.status == 'settling' && !@user_bet %>
+        <div class="bet-form">
+          <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem;">Submit Outcome</h3>
+          <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 1rem;">Vote on what actually happened:</p>
+          <%= form_with url: market_bets_path(@market), method: :post do |f| %>
+            <% @market.market_options.each do |opt| %>
+              <label style="display: block; margin-bottom: 0.5rem; cursor: pointer;">
+                <input type="radio" name="bet[market_option_id]" value="<%= opt.id %>" style="margin-right: 0.5rem;" required>
+                <%= opt.label %>
+              </label>
+            <% end %>
+            <%= f.hidden_field :amount, value: 0 %>
+            <%= f.submit "Submit Outcome", class: "btn btn-primary", style: "width: 100%; margin-top: 0.5rem;" %>
+          <% end %>
+        </div>
+      <% end %>
+
+      <%# Creator actions %>
+      <% if @market.creator == current_user && @market.status == 'open' %>
+        <div class="card" style="margin-top: 1rem;">
+          <h4 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--text-muted);">Creator Actions</h4>
+          <%= button_to "Mark as Settling", settle_market_path(@market), method: :post, class: "btn btn-secondary", style: "width: 100%;" %>
+        </div>
+      <% end %>
+
+      <%# Report %>
+      <div class="card" style="margin-top: 1rem;">
+        <h4 style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--text-muted);">Report This Market</h4>
+        <%= form_with url: report_market_path(@market), method: :post do |f| %>
+          <%= f.text_area :reason, class: "form-control", placeholder: "Describe why this market violates guidelines...", style: "min-height: 60px; font-size: 0.85rem;" %>
+          <%= f.submit "Submit Report", class: "btn btn-danger", style: "width: 100%; margin-top: 0.5rem; font-size: 0.85rem;" %>
+        <% end %>
+      </div>
+
+    <% else %>
+      <div class="bet-form" style="text-align: center;">
+        <p style="color: var(--text-muted); margin-bottom: 1rem;">Sign in to place bets</p>
+        <%= link_to "Sign In", new_session_path, class: "btn btn-primary", style: "width: 100%;" %>
+      </div>
+    <% end %>
+  </div>
+</div>

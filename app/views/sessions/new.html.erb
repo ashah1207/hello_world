@@ -1,0 +1,32 @@
+<div class="login-wrapper">
+  <div class="login-box">
+    <h1 class="login-title">PropBet</h1>
+    <p class="login-sub">Sign in or create an account to start betting on your social circle.</p>
+
+    <%= form_with url: session_path, method: :post do |f| %>
+      <div class="form-group">
+        <label class="form-label">Your Name</label>
+        <%= f.text_field :name, class: "form-control", placeholder: "e.g. Alex Johnson", required: true %>
+        <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.25rem; display: block;">
+          Used if signing up for the first time
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <%= f.email_field :email, class: "form-control", placeholder: "your@email.com", required: true %>
+        <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.25rem; display: block;">
+          Existing users: we'll find your account. New users: we'll create one!
+        </small>
+      </div>
+
+      <div class="form-group" style="margin-top: 1.5rem;">
+        <%= f.submit "Sign In / Sign Up", class: "btn btn-primary", style: "width: 100%; font-size: 1rem; padding: 0.75rem;" %>
+      </div>
+    <% end %>
+
+    <div style="text-align: center; margin-top: 1rem; font-size: 0.8rem; color: var(--text-muted);">
+      New users receive <strong style="color: var(--accent-green);">$100.00</strong> in starting balance.
+    </div>
+  </div>
+</div>

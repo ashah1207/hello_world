@@ -1,0 +1,42 @@
+<div class="page-header">
+  <h1 class="page-title">Betting Pools</h1>
+  <%= link_to "+ Create Pool", new_pool_path, class: "btn btn-primary" %>
+</div>
+
+<% if @my_pools.any? %>
+  <h2 style="font-size: 1rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem;">Your Pools</h2>
+  <div class="markets-grid" style="margin-bottom: 2rem;">
+    <% @my_pools.each do |pool| %>
+      <%= link_to pool_path(pool), class: "market-card" do %>
+        <div class="card-header">
+          <span class="badge badge-<%= pool.pool_type %>"><%= pool.pool_type %></span>
+          <span style="color: var(--text-muted); font-size: 0.8rem;"><%= pool.members.count %> members</span>
+        </div>
+        <div class="market-title"><%= pool.name %></div>
+        <div class="market-meta">Created by <%= pool.creator.display_name %></div>
+        <div style="font-size: 0.8rem; color: var(--accent-green); margin-top: 0.5rem;"><%= pool.markets.count %> active markets</div>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>
+
+<h2 style="font-size: 1rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem;">Public Pools</h2>
+<% if @public_pools.empty? %>
+  <div class="card" style="text-align: center; padding: 2rem;">
+    <p style="color: var(--text-muted);">No public pools yet. <%= link_to "Create one!", new_pool_path, style: "color: var(--accent-green);" %></p>
+  </div>
+<% else %>
+  <div class="markets-grid">
+    <% @public_pools.each do |pool| %>
+      <%= link_to pool_path(pool), class: "market-card" do %>
+        <div class="card-header">
+          <span class="badge badge-public">Public</span>
+          <span style="color: var(--text-muted); font-size: 0.8rem;"><%= pool.members.count %> members</span>
+        </div>
+        <div class="market-title"><%= pool.name %></div>
+        <div class="market-meta">Created by <%= pool.creator.display_name %></div>
+        <div style="font-size: 0.8rem; color: var(--accent-green); margin-top: 0.5rem;"><%= pool.markets.count %> markets</div>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>

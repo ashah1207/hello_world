@@ -1,0 +1,49 @@
+<div class="page-header">
+  <h1 class="page-title">Top Sharks Leaderboard</h1>
+  <span style="color: var(--text-muted); font-size: 0.85rem;">All-time profits from settled bets</span>
+</div>
+
+<% if @leaderboard.empty? %>
+  <div class="card" style="text-align: center; padding: 3rem;">
+    <p style="color: var(--text-muted); font-size: 1.1rem;">No settled bets yet. The leaderboard will populate as markets resolve.</p>
+    <%= link_to "Browse Markets", markets_path, class: "btn btn-primary", style: "margin-top: 1rem;" %>
+  </div>
+<% else %>
+  <div class="card" style="overflow: hidden; padding: 0;">
+    <table class="leaderboard-table">
+      <thead>
+        <tr>
+          <th style="width: 50px;">#</th>
+          <th>Bettor</th>
+          <th>Net Profit</th>
+          <th>Win Rate</th>
+          <th>Total Bets</th>
+          <th>Wins</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @leaderboard.each_with_index do |entry, i| %>
+          <tr>
+            <td class="rank-<%= [i+1, 4].min %>">
+              <% if i == 0 %>&#127941;<% elsif i == 1 %>&#129352;<% elsif i == 2 %>&#129353;<% else %><%= i + 1 %><% end %>
+            </td>
+            <td style="font-weight: 600;"><%= entry[:user].display_name %></td>
+            <td class="<%= entry[:profit] >= 0 ? 'profit-positive' : 'profit-negative' %>">
+              <%= entry[:profit] >= 0 ? '+' : '' %>$<%= '%.2f' % entry[:profit].abs %>
+            </td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="background: var(--border); border-radius: 4px; height: 6px; width: 60px; overflow: hidden;">
+                  <div style="background: var(--accent-green); height: 100%; width: <%= entry[:win_rate] %>%;"></div>
+                </div>
+                <span><%= entry[:win_rate] %>%</span>
+              </div>
+            </td>
+            <td><%= entry[:total_bets] %></td>
+            <td style="color: var(--accent-green);"><%= entry[:wins] %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

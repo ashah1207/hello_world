@@ -1,0 +1,73 @@
+<%# Live Ticker %>
+<% if @trending_markets.any? %>
+  <div class="ticker-bar">
+    <span class="ticker-label">LIVE</span>
+    <div class="ticker-content">
+      <div class="ticker-scroll">
+        <% (@trending_markets + @trending_markets).each do |m| %>
+          <span class="ticker-item">
+            <span class="ticker-name"><%= m.subject_name.present? ? m.subject_name : "Market" %></span>
+            &bull; <%= m.title.truncate(50) %> &bull;
+            <% if m.market_options.first %>
+              <span class="ticker-up"><%= m.market_options.first.label %> <%= m.odds_for(m.market_options.first) %>%</span>
+            <% end %>
+            &bull; Pool: <span class="ticker-up">$<%= '%.2f' % m.total_pool %></span>
+          </span>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<div class="page-header">
+  <h1 class="page-title">Markets</h1>
+  <div style="display: flex; gap: 0.75rem; align-items: center;">
+    <%= link_to "All", markets_path, class: "btn btn-outline #{params[:status].blank? ? 'btn-primary' : ''}" %>
+    <%= link_to "Open", markets_path(status: 'open'), class: "btn btn-outline #{params[:status] == 'open' ? 'btn-primary' : ''}" %>
+    <%= link_to "Settling", markets_path(status: 'settling'), class: "btn btn-outline #{params[:status] == 'settling' ? 'btn-primary' : ''}" %>
+    <% if logged_in? %>
+      <%= link_to "+ New Market", new_market_path, class: "btn btn-primary" %>
+    <% end %>
+  </div>
+</div>
+
+<% if @markets.empty? %>
+  <div class="card" style="text-align: center; padding: 3rem;">
+    <p style="color: var(--text-muted); font-size: 1.1rem;">No markets yet.</p>
+    <% if logged_in? %>
+      <%= link_to "Create the first market!", new_market_path, class: "btn btn-primary", style: "margin-top: 1rem;" %>
+    <% else %>
+      <%= link_to "Sign in to create markets", new_session_path, class: "btn btn-primary", style: "margin-top: 1rem;" %>
+    <% end %>
+  </div>
+<% else %>
+  <div class="markets-grid">
+    <% @markets.each do |market| %>
+      <%= link_to market_path(market), class: "market-card" do %>
+        <div class="card-header">
+          <span class="badge badge-<%= market.status %>"><%= market.status %></span>
+          <% if market.pool %>
+            <span class="badge badge-<%= market.pool.pool_type %>"><%= market.pool.name %></span>
+          <% end %>
+        </div>
+        <div class="market-title"><%= market.title %></div>
+        <div class="market-meta">
+          <% if market.subject_name.present? %>
+            About <strong><%= market.subject_name %></strong> &bull;
+          <% end %>
+          By <%= market.creator.display_name %> &bull;
+          Ends <%= time_ago_in_words(market.end_time) %> <%= market.end_time > Time.current ? "from now" : "ago" %>
+        </div>
+        <div class="pool-total">Pool: $<%= '%.2f' % market.total_pool %></div>
+        <div class="odds-bar">
+          <% market.market_options.each_with_index do |opt, i| %>
+            <div class="odds-option <%= i == 0 ? 'odds-yes' : (i == 1 ? 'odds-no' : 'odds-neutral') %>">
+              <%= opt.label %><br>
+              <span style="font-size: 0.95rem;"><%= market.odds_for(opt) %>%</span>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>

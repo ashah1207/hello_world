@@ -1,0 +1,82 @@
+<div style="margin-bottom: 1rem;">
+  <%= link_to "&larr; All Pools".html_safe, pools_path, style: "color: var(--text-muted); text-decoration: none; font-size: 0.85rem;" %>
+</div>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title"><%= @pool.name %></h1>
+    <span class="badge badge-<%= @pool.pool_type %>" style="margin-top: 0.25rem;"><%= @pool.pool_type.capitalize %></span>
+  </div>
+  <div style="display: flex; gap: 0.75rem;">
+    <% if logged_in? %>
+      <% if @pool.member?(current_user) %>
+        <% if logged_in? && @pool.pool_type == 'private' %>
+          <div style="font-size: 0.8rem; color: var(--text-muted); padding: 0.5rem; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border);">
+            Invite Code: <strong style="color: var(--accent-yellow)"><%= @pool.invite_code %></strong>
+          </div>
+        <% end %>
+        <%= button_to "Leave Pool", leave_pool_path(@pool), method: :delete, class: "btn btn-outline", style: "font-size: 0.85rem;" %>
+      <% else %>
+        <% if @pool.pool_type == 'private' %>
+          <form action="<%= join_pool_path(@pool) %>" method="post" style="display: flex; gap: 0.5rem;">
+            <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+            <input type="text" name="invite_code" class="form-control" placeholder="Invite code" style="width: 130px; font-size: 0.85rem; padding: 0.4rem 0.7rem;">
+            <button type="submit" class="btn btn-primary" style="font-size: 0.85rem;">Join</button>
+          </form>
+        <% else %>
+          <%= button_to "Join Pool", join_pool_path(@pool), method: :post, class: "btn btn-primary" %>
+        <% end %>
+      <% end %>
+    <% end %>
+    <% if logged_in? && @pool.member?(current_user) %>
+      <%= link_to "+ New Market", new_market_path(market: { pool_id: @pool.id }), class: "btn btn-primary" %>
+    <% end %>
+  </div>
+</div>
+
+<div class="layout-split">
+  <div>
+    <h3 style="font-size: 0.9rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem;">Markets in This Pool</h3>
+    <% if @markets.empty? %>
+      <div class="card" style="text-align: center; padding: 2rem;">
+        <p style="color: var(--text-muted);">No markets in this pool yet.</p>
+      </div>
+    <% else %>
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <% @markets.each do |market| %>
+          <%= link_to market_path(market), class: "market-card" do %>
+            <div class="card-header">
+              <span class="badge badge-<%= market.status %>"><%= market.status %></span>
+            </div>
+            <div class="market-title"><%= market.title %></div>
+            <div class="market-meta">By <%= market.creator.display_name %> &bull; Pool: $<%= '%.2f' % market.total_pool %></div>
+            <div class="odds-bar">
+              <% market.market_options.each_with_index do |opt, i| %>
+                <div class="odds-option <%= i == 0 ? 'odds-yes' : (i == 1 ? 'odds-no' : 'odds-neutral') %>">
+                  <%= opt.label %> &bull; <%= market.odds_for(opt) %>%
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <div>
+    <div class="card">
+      <h3 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Members (<%= @pool.members.count %>)</h3>
+      <% @members.each do |member| %>
+        <div style="padding: 0.5rem 0; border-bottom: 1px solid var(--border); font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;">
+          <% if member == @pool.creator %>
+            <span style="color: var(--accent-yellow); font-size: 0.7rem;">&#9733;</span>
+          <% end %>
+          <%= member.name %>
+          <% if member == @pool.creator %>
+            <span style="font-size: 0.7rem; color: var(--text-muted);">(creator)</span>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
